@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Math Facts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:   #0F1B2D;
+    --panel:  #162032;
+    --border: #1E2E44;
+    --amber:  #F5A623;
+    --coral:  #E84A5F;
+    --green:  #27AE60;
+    --white:  #F0F4F8;
+    --muted:  #5A7294;
+    --mono:   'Space Mono', monospace;
+    --sans:   'Inter', sans-serif;
+  }
+
+  html, body { height: 100%; overflow-x: hidden; }
+
+  body {
+    background: var(--navy);
+    color: var(--white);
+    font-family: var(--sans);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 16px 32px;
+    gap: 14px;
+  }
+
+  /* ── Header ── */
+  header {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--amber);
+    text-transform: uppercase;
+  }
+  .streak-badge {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .streak-badge span {
+    font-size: 1rem;
+    color: var(--amber);
+    font-weight: 700;
+  }
+
+  /* ── Operation selector ── */
+  .ops {
+    width: 100%;
+    max-width: 480px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .op-btn {
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 0;
+    font-family: var(--mono);
+    font-size: 1.3rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .op-btn .op-label {
+    font-family: var(--sans);
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .op-btn.active {
+    border-color: var(--amber);
+    background: rgba(245,166,35,0.12);
+    color: var(--amber);
+  }
+  .op-btn.active .op-label { color: var(--amber); }
+
+  /* ── Range selector ── */
+  .range-row {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .range-row label {
+    font-size: 0.72rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .range-row input[type=range] {
+    flex: 1;
+    accent-color: var(--amber);
+    height: 4px;
+    cursor: pointer;
+  }
+  .range-val {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    color: var(--amber);
+    min-width: 28px;
+    text-align: right;
+  }
+
+  /* ── Main card ── */
+  .card {
+    width: 100%;
+    max-width: 480px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 28px 24px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── Problem display ── */
+  .problem {
+    font-family: var(--mono);
+    font-size: clamp(3rem, 14vw, 5.5rem);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--white);
+    text-align: center;
+    margin-bottom: 20px;
+    min-height: 1.1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.05em;
+    width: 100%;
+  }
+  .problem .op-sym { color: var(--muted); margin: 0 0.1em; }
+  .problem .blank {
+    color: var(--amber);
+    border-bottom: 4px solid var(--amber);
+    min-width: 0.7em;
+    display: inline-block;
+    text-align: center;
+    padding-bottom: 2px;
+  }
+
+  /* ── Answer display ── */
+  .answer-display {
+    width: 100%;
+    background: var(--navy);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: var(--mono);
+    font-size: 1.8rem;
+    color: var(--white);
+    text-align: center;
+    min-height: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s, background 0.15s;
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+  }
+  .answer-display.empty   { color: var(--muted); }
+  .answer-display.correct { border-color: var(--green); background: rgba(39,174,96,0.08); color: var(--green); }
+  .answer-display.wrong   { border-color: var(--coral); background: rgba(232,74,95,0.08); color: var(--coral); }
+  .answer-display.active  { border-color: var(--amber); }
+
+  /* ── Feedback ── */
+  .feedback {
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    min-height: 1.3em;
+    text-align: center;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .feedback.correct { color: var(--green); }
+  .feedback.wrong   { color: var(--coral); }
+  .feedback.hidden  { opacity: 0; }
+
+  /* ── Custom Numpad ── */
+  .numpad {
+    width: 100%;
+    max-width: 480px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .np-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0;
+    height: 60px;
+    font-family: var(--mono);
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--white);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s, transform 0.08s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+  }
+  .np-btn:active { background: var(--border); transform: scale(0.95); }
+  .np-btn.del { font-size: 1rem; font-family: var(--sans); font-weight: 600; letter-spacing: 0.04em; color: var(--muted); background: var(--navy); }
+  .np-btn.del:active { background: var(--border); }
+  .np-btn.submit {
+    background: var(--amber);
+    color: var(--navy);
+    border-color: var(--amber);
+    font-size: 1.2rem;
+  }
+  .np-btn.submit:active { background: #d4911a; transform: scale(0.95); }
+
+  /* ── Stats bar ── */
+  .stats {
+    width: 100%;
+    max-width: 480px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 6px;
+    text-align: center;
+  }
+  .stat-val {
+    font-family: var(--mono);
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+  .stat-val.amber { color: var(--amber); }
+  .stat-val.green { color: var(--green); }
+
+  /* ── Heatmap section ── */
+  .heatmap-toggle {
+    width: 100%;
+    max-width: 480px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .heatmap-toggle:active { border-color: var(--muted); color: var(--white); }
+  .heatmap-toggle .chevron {
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+    display: inline-block;
+  }
+  .heatmap-toggle.open .chevron { transform: rotate(180deg); }
+
+  .heatmap-panel {
+    width: 100%;
+    max-width: 480px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    display: none;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .heatmap-panel.open { display: flex; }
+
+  .heatmap-op-tabs {
+    display: flex;
+    gap: 6px;
+  }
+  .hm-tab {
+    flex: 1;
+    background: var(--navy);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 6px 0;
+    font-family: var(--mono);
+    font-size: 1rem;
+    color: var(--muted);
+    cursor: pointer;
+    text-align: center;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: all 0.12s;
+  }
+  .hm-tab.active {
+    border-color: var(--amber);
+    color: var(--amber);
+    background: rgba(245,166,35,0.1);
+  }
+
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .legend-swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+
+  /* Scrollable grid wrapper */
+  .heatmap-scroll {
+    width: 100%;
+  }
+
+  .heatmap-grid {
+    display: grid;
+    grid-template-columns: repeat(13, 1fr);
+    gap: 2px;
+    width: 100%;
+  }
+
+  /* Each cell */
+  .hm-cell {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    background: var(--navy);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.1s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    min-width: 0;
+  }
+  .hm-cell:active { transform: scale(0.88); }
+
+  /* axis labels */
+  .hm-axis {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: clamp(0.4rem, 2vw, 0.6rem);
+    color: var(--muted);
+    min-width: 0;
+  }
+
+
+  /* tooltip */
+  .hm-tooltip {
+    position: fixed;
+    background: #0a1220;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--white);
+    pointer-events: none;
+    z-index: 100;
+    white-space: nowrap;
+    display: none;
+    line-height: 1.6;
+  }
+
+  /* ── Bottom actions ── */
+  .actions {
+    width: 100%;
+    max-width: 480px;
+    display: flex;
+    gap: 8px;
+  }
+  .ghost-btn {
+    flex: 1;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: border-color 0.15s, color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .ghost-btn:active { color: var(--white); border-color: var(--muted); }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, .chevron { transition: none !important; }
+  }
+
+  /* ── Session summary modal ── */
+  .session-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,18,30,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 24px;
+    backdrop-filter: blur(3px);
+  }
+  .session-overlay.hidden { display: none; }
+  .session-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 360px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .session-title {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .session-stats {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .session-stat {
+    background: var(--navy);
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .session-stat-val {
+    font-family: var(--mono);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--white);
+    line-height: 1;
+  }
+  .session-stat-val.amber { color: var(--amber); }
+  .session-stat-val.green { color: var(--green); }
+  .session-stat-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 5px;
+  }
+  .session-new-btn {
+    width: 100%;
+    background: var(--amber);
+    border: none;
+    border-radius: 12px;
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--navy);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  .session-new-btn:active { opacity: 0.85; }
+
+  .session-danger-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid #4a2020;
+    border-radius: 12px;
+    padding: 12px;
+    font-family: var(--sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #7B3F3F;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  .session-danger-btn:active { border-color: var(--coral); color: var(--coral); }
+
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Math Facts</div>
+  <div class="streak-badge">🔥 Streak <span id="streak-count">0</span></div>
+</header>
+
+<div class="ops">
+  <button class="op-btn active" data-op="+" onclick="setOp(this)">+<span class="op-label">Add</span></button>
+  <button class="op-btn" data-op="−" onclick="setOp(this)">−<span class="op-label">Sub</span></button>
+  <button class="op-btn" data-op="×" onclick="setOp(this)">×<span class="op-label">Mult</span></button>
+  <button class="op-btn" data-op="÷" onclick="setOp(this)">÷<span class="op-label">Div</span></button>
+</div>
+
+<div class="range-row">
+  <label>Up to</label>
+  <input type="range" id="max-range" min="5" max="100" value="12" oninput="updateRange(this)">
+  <div class="range-val" id="range-display">12</div>
+</div>
+
+<div class="card">
+  <div class="problem">
+    <span id="num-a"></span>
+    <span class="op-sym" id="op-display">+</span>
+    <span id="num-b"></span>
+    <span class="op-sym">=</span>
+    <span class="blank" id="blank-display">&nbsp;</span>
+  </div>
+  <div class="answer-display empty active" id="answer-display">?</div>
+  <div class="feedback hidden" id="feedback"></div>
+</div>
+
+<div class="numpad">
+  <button class="np-btn" onclick="numpadPress('7')">7</button>
+  <button class="np-btn" onclick="numpadPress('8')">8</button>
+  <button class="np-btn" onclick="numpadPress('9')">9</button>
+  <button class="np-btn" onclick="numpadPress('4')">4</button>
+  <button class="np-btn" onclick="numpadPress('5')">5</button>
+  <button class="np-btn" onclick="numpadPress('6')">6</button>
+  <button class="np-btn" onclick="numpadPress('1')">1</button>
+  <button class="np-btn" onclick="numpadPress('2')">2</button>
+  <button class="np-btn" onclick="numpadPress('3')">3</button>
+  <button class="np-btn del" onclick="numpadDel()">DEL</button>
+  <button class="np-btn" onclick="numpadPress('0')">0</button>
+  <button class="np-btn submit" onclick="checkAnswer()">→</button>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="stat-val" id="stat-total">0</div><div class="stat-label">Answered</div></div>
+  <div class="stat"><div class="stat-val green" id="stat-correct">0</div><div class="stat-label">Correct</div></div>
+  <div class="stat"><div class="stat-val amber" id="stat-pct">—</div><div class="stat-label">Accuracy</div></div>
+</div>
+
+<!-- Heatmap toggle -->
+<button class="heatmap-toggle" id="heatmap-toggle" onclick="toggleHeatmap()">
+  <span>Mastery Map</span>
+  <span class="chevron">▼</span>
+</button>
+
+<div class="heatmap-panel" id="heatmap-panel">
+  <div class="heatmap-op-tabs" id="hm-tabs">
+    <button class="hm-tab active" data-op="+" onclick="setHmOp(this)">+</button>
+    <button class="hm-tab" data-op="−" onclick="setHmOp(this)">−</button>
+    <button class="hm-tab" data-op="×" onclick="setHmOp(this)">×</button>
+    <button class="hm-tab" data-op="÷" onclick="setHmOp(this)">÷</button>
+  </div>
+  <div class="heatmap-legend">
+    <span class="legend-swatch" style="background:#1E2E44"></span> Unseen
+    <span class="legend-swatch" style="background:#7B3F3F; margin-left:6px"></span> Weak
+    <span class="legend-swatch" style="background:#8B6914; margin-left:6px"></span> Learning
+    <span class="legend-swatch" style="background:#27AE60; margin-left:6px"></span> Strong
+  </div>
+  <div style="font-size:0.62rem;color:var(--muted);letter-spacing:0.05em;">Tap a cell to inspect · Hold to drill that fact</div>
+  <div class="heatmap-scroll">
+    <div class="heatmap-grid" id="heatmap-grid"></div>
+  </div>
+</div>
+
+<div class="actions">
+  <button class="ghost-btn" onclick="skipQuestion()">Skip this one</button>
+  <button class="ghost-btn" onclick="resetStats()">Reset score</button>
+</div>
+
+<!-- Tooltip -->
+<div class="hm-tooltip" id="hm-tooltip"></div>
+
+<!-- Session summary modal -->
+<div class="session-overlay hidden" id="session-overlay">
+  <div class="session-card">
+    <div class="session-title">Session Complete</div>
+    <div class="session-stats">
+      <div class="session-stat">
+        <div class="session-stat-val" id="ss-total">0</div>
+        <div class="session-stat-label">Answered</div>
+      </div>
+      <div class="session-stat">
+        <div class="session-stat-val green" id="ss-correct">0</div>
+        <div class="session-stat-label">Correct</div>
+      </div>
+      <div class="session-stat">
+        <div class="session-stat-val amber" id="ss-pct">—</div>
+        <div class="session-stat-label">Accuracy</div>
+      </div>
+      <div class="session-stat">
+        <div class="session-stat-val amber" id="ss-streak">0</div>
+        <div class="session-stat-label">Best Streak</div>
+      </div>
+    </div>
+    <button class="session-new-btn" onclick="confirmReset()">Start New Session</button>
+    <button class="session-danger-btn" onclick="confirmResetAll()">Reset Everything — clear all memory</button>
+  </div>
+</div>
+
+<script>
+  // ─────────────────────────────────────────────
+  // State
+  // ─────────────────────────────────────────────
+  let currentOp = '+';
+  let maxVal = 12;
+  let numA = 0, numB = 0, correctAnswer = 0;
+  let total = 0, correct = 0, streak = 0, bestStreak = 0;
+  let answered = false;
+  let currentEntry = '';
+  let questionStartTime = 0;
+
+  // masteryData[op][a][b] = { history: [...], totalMs: 0 }
+  // history is a rolling window of last 10 results (1=correct, 0=wrong)
+  // totalMs accumulates all response times (not capped, used for avg speed)
+  const HISTORY_CAP = 10;
+  const OPS = ['+', '−', '×', '÷'];
+  const masteryData = loadMastery();
+
+  function loadMastery() {
+    try {
+      const raw = localStorage.getItem('mathfacts_v2');
+      if (raw) return JSON.parse(raw);
+    } catch(e) {}
+    const d = {};
+    OPS.forEach(op => { d[op] = {}; });
+    return d;
+  }
+
+  function saveMastery() {
+    try {
+      localStorage.setItem('mathfacts_v2', JSON.stringify(masteryData));
+    } catch(e) {}
+  }
+
+  function getFactData(op, a, b) {
+    if (!masteryData[op]) masteryData[op] = {};
+    if (!masteryData[op][a]) masteryData[op][a] = {};
+    if (!masteryData[op][a][b]) masteryData[op][a][b] = { history: [], totalMs: 0, attempts: 0 };
+    return masteryData[op][a][b];
+  }
+
+  function recordResult(op, a, b, wasCorrect, ms) {
+    const d = getFactData(op, a, b);
+    d.history.push(wasCorrect ? 1 : 0);
+    if (d.history.length > HISTORY_CAP) d.history.shift(); // rolling cap
+    d.totalMs += ms;
+    d.attempts++;
+    saveMastery();
+  }
+
+  // Accuracy based on last 10 attempts only
+  function factAccuracy(d) {
+    if (!d || !d.history || d.history.length === 0) return null;
+    return d.history.reduce((s, v) => s + v, 0) / d.history.length;
+  }
+
+  // ─────────────────────────────────────────────
+  // Numpad
+  // ─────────────────────────────────────────────
+  function numpadPress(digit) {
+    if (answered) return;
+    if (currentEntry.length >= 5) return;
+    currentEntry += digit;
+    renderEntry();
+  }
+  function numpadDel() {
+    if (answered) return;
+    currentEntry = currentEntry.slice(0, -1);
+    renderEntry();
+  }
+  function renderEntry() {
+    const el = document.getElementById('answer-display');
+    if (currentEntry === '') {
+      el.textContent = '?';
+      el.className = 'answer-display empty active';
+    } else {
+      el.textContent = currentEntry;
+      el.className = 'answer-display active';
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // Op / Range
+  // ─────────────────────────────────────────────
+  function setOp(btn) {
+    document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentOp = btn.dataset.op;
+    nextQuestion();
+  }
+  function updateRange(el) {
+    maxVal = parseInt(el.value);
+    document.getElementById('range-display').textContent = maxVal;
+    nextQuestion();
+  }
+
+  // ─────────────────────────────────────────────
+  // Question generation
+  // ─────────────────────────────────────────────
+  // Weight: unseen=4, weak(<70% acc)=3, learning(70-89%)=2, strong(90%+)=1
+  function factWeight(op, a, b) {
+    const d = (masteryData[op][a] || {})[b];
+    const acc = factAccuracy(d);
+    if (acc === null) return 4;        // unseen
+    if (acc < 0.7)   return 3;        // weak
+    if (acc < 0.9)   return 2;        // learning
+    return 1;                          // strong
+  }
+
+  function pickWeighted(op) {
+    // Build candidate list within maxVal range
+    const candidates = [];
+    const totalWeight = [];
+    let cumulative = 0;
+    for (let a = 1; a <= maxVal; a++) {
+      for (let b = 1; b <= maxVal; b++) {
+        // For subtraction skip b > a (would go negative operand)
+        if (op === '−' && b > a) continue;
+        const w = factWeight(op, a, b);
+        cumulative += w;
+        candidates.push([a, b]);
+        totalWeight.push(cumulative);
+      }
+    }
+    const r = Math.random() * cumulative;
+    const idx = totalWeight.findIndex(t => t >= r);
+    return candidates[idx] || candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  function generateQuestion() {
+    let a, b, ans;
+    if (currentOp === '+') {
+      [a, b] = pickWeighted('+');
+      ans = a + b;
+    } else if (currentOp === '−') {
+      [a, b] = pickWeighted('−');
+      ans = a - b;
+    } else if (currentOp === '×') {
+      [a, b] = pickWeighted('×');
+      ans = a * b;
+    } else {
+      // division: pick quotient (ans) and divisor (b), dividend = a*b
+      const [ans_, b_] = pickWeighted('÷');
+      b = b_; ans = ans_; a = b * ans;
+    }
+    numA = a; numB = b; correctAnswer = ans;
+  }
+
+  function renderQuestion() {
+    document.getElementById('num-a').textContent = numA;
+    document.getElementById('op-display').textContent = currentOp;
+    document.getElementById('num-b').textContent = numB;
+    document.getElementById('blank-display').innerHTML = '&nbsp;';
+    currentEntry = '';
+    renderEntry();
+    setFeedback('', '');
+    answered = false;
+    questionStartTime = Date.now();
+  }
+
+  function nextQuestion() {
+    generateQuestion();
+    renderQuestion();
+  }
+
+  // ─────────────────────────────────────────────
+  // Answer check
+  // ─────────────────────────────────────────────
+  function checkAnswer() {
+    if (answered) { nextQuestion(); return; }
+    if (currentEntry === '') return;
+
+    const ms = Date.now() - questionStartTime;
+    const userAns = parseInt(currentEntry, 10);
+    answered = true;
+    total++;
+
+    const display = document.getElementById('answer-display');
+    const wasCorrect = userAns === correctAnswer;
+
+    recordResult(currentOp, numA, numB, wasCorrect, ms);
+    if (document.getElementById('heatmap-panel').classList.contains('open')) {
+      renderHeatmap();
+    }
+
+    if (wasCorrect) {
+      correct++;
+      streak++;
+      if (streak > bestStreak) bestStreak = streak;
+      display.className = 'answer-display correct';
+      document.getElementById('blank-display').textContent = correctAnswer;
+      setFeedback('Correct! ✓', 'correct');
+      updateStats();
+      setTimeout(nextQuestion, 750);
+    } else {
+      streak = 0;
+      display.className = 'answer-display wrong';
+      document.getElementById('blank-display').textContent = correctAnswer;
+      setFeedback(`Not quite — answer is ${correctAnswer}`, 'wrong');
+      updateStats();
+      setTimeout(nextQuestion, 1500);
+    }
+  }
+
+  function setFeedback(msg, cls) {
+    const el = document.getElementById('feedback');
+    el.textContent = msg;
+    el.className = 'feedback ' + (msg ? cls : 'hidden');
+  }
+
+  function updateStats() {
+    document.getElementById('stat-total').textContent = total;
+    document.getElementById('stat-correct').textContent = correct;
+    const pct = total > 0 ? Math.round((correct / total) * 100) + '%' : '—';
+    document.getElementById('stat-pct').textContent = pct;
+    document.getElementById('streak-count').textContent = streak;
+  }
+
+  function skipQuestion() {
+    streak = 0;
+    document.getElementById('streak-count').textContent = streak;
+    nextQuestion();
+  }
+  function resetStats() {
+    // Only show summary if there's something to show
+    if (total === 0) return;
+    const pct = Math.round((correct / total) * 100);
+    document.getElementById('ss-total').textContent = total;
+    document.getElementById('ss-correct').textContent = correct;
+    document.getElementById('ss-pct').textContent = pct + '%';
+    document.getElementById('ss-streak').textContent = bestStreak;
+    document.getElementById('session-overlay').classList.remove('hidden');
+  }
+
+  function confirmReset() {
+    document.getElementById('session-overlay').classList.add('hidden');
+    total = 0; correct = 0; streak = 0; bestStreak = 0;
+    updateStats();
+    nextQuestion();
+  }
+
+  function confirmResetAll() {
+    document.getElementById('session-overlay').classList.add('hidden');
+    // Wipe LocalStorage
+    try { localStorage.removeItem('mathfacts_v2'); } catch(e) {}
+    // Reset in-memory mastery
+    OPS.forEach(op => { masteryData[op] = {}; });
+    // Reset session stats
+    total = 0; correct = 0; streak = 0; bestStreak = 0;
+    updateStats();
+    // Re-render heatmap if open
+    if (document.getElementById('heatmap-panel').classList.contains('open')) renderHeatmap();
+    nextQuestion();
+  }
+
+  // ─────────────────────────────────────────────
+  // Heatmap
+  // ─────────────────────────────────────────────
+  let hmOp = '+';
+
+  function toggleHeatmap() {
+    const panel = document.getElementById('heatmap-panel');
+    const toggle = document.getElementById('heatmap-toggle');
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open', !isOpen);
+    toggle.classList.toggle('open', !isOpen);
+    if (!isOpen) renderHeatmap();
+  }
+
+  function setHmOp(btn) {
+    document.querySelectorAll('.hm-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    hmOp = btn.dataset.op;
+    renderHeatmap();
+  }
+
+  function cellColor(data) {
+    const acc = factAccuracy(data);
+    if (acc === null) return '#1E2E44'; // unseen
+    const avgMs = data.attempts > 0 ? data.totalMs / data.attempts : 9999;
+    if (acc >= 0.9 && avgMs < 4000) return '#1e7a45'; // mastered: fast + accurate
+    if (acc >= 0.9) return '#27AE60';                  // strong: accurate but slow
+    if (acc >= 0.7) return '#7B6B14';                  // learning
+    if (acc >= 0.5) return '#8B4513';                  // weak
+    return '#7B1F1F';                                  // struggling
+  }
+
+  function renderHeatmap() {
+    const grid = document.getElementById('heatmap-grid');
+    grid.innerHTML = '';
+
+    // Heatmap shows 1–12 (no zeros)
+    // regardless of the current maxVal slider, so the map is always complete
+    const START = 1, END = 13; // 1 through 12
+    const N = END - START; // 12 columns/rows
+
+    // columns handled by CSS (13 equal cols)
+
+    // Top row: column axis (1–12)
+    grid.appendChild(makeAxisCell('')); // corner
+    for (let b = START; b < END; b++) grid.appendChild(makeAxisCell(b));
+
+    // Data rows
+    for (let a = START; a < END; a++) {
+      // Row label
+      grid.appendChild(makeAxisCell(a));
+      for (let b = START; b < END; b++) {
+        const d = (masteryData[hmOp][a] || {})[b];
+        const cell = document.createElement('div');
+        cell.className = 'hm-cell';
+        cell.style.background = cellColor(d);
+        cell.title = '';
+
+        // tap/hover tooltip
+        const label = hmOp === '÷'
+          ? `${a * b} ÷ ${b} = ${a}`  // for division a*b is the dividend
+          : `${a} ${hmOp} ${b} = ${correctResultFor(hmOp, a, b)}`;
+
+        // Tap = show tooltip; long-press (500ms) = drill that fact
+        let pressTimer = null;
+        let didLongPress = false;
+
+        cell.addEventListener('pointerdown', (e) => {
+          didLongPress = false;
+          pressTimer = setTimeout(() => {
+            didLongPress = true;
+            hideTooltip();
+            drillCell(a, b);
+          }, 500);
+        });
+
+        cell.addEventListener('pointerup', (e) => {
+          clearTimeout(pressTimer);
+          if (!didLongPress) showTooltip(e, d, a, b);
+        });
+
+        cell.addEventListener('pointercancel', () => {
+          clearTimeout(pressTimer);
+          hideTooltip();
+        });
+
+        cell.addEventListener('pointerleave', () => {
+          clearTimeout(pressTimer);
+        });
+        grid.appendChild(cell);
+      }
+    }
+  }
+
+  function correctResultFor(op, a, b) {
+    if (op === '+') return a + b;
+    if (op === '−') return a - b;
+    if (op === '×') return a * b;
+    if (op === '÷') return b === 0 ? '—' : a / b;
+  }
+
+  function makeAxisCell(text) {
+    const el = document.createElement('div');
+    el.className = 'hm-axis';
+    el.textContent = text;
+    return el;
+  }
+
+  let tooltipTimeout = null;
+  function showTooltip(e, data, a, b) {
+    clearTimeout(tooltipTimeout);
+    const tip = document.getElementById('hm-tooltip');
+    let expr = '';
+    if (hmOp === '÷') {
+      expr = `${a * b} ÷ ${b} = ${a}`;
+    } else {
+      expr = `${a} ${hmOp} ${b} = ${correctResultFor(hmOp, a, b)}`;
+    }
+    const acc = factAccuracy(data);
+    if (acc === null) {
+      tip.innerHTML = `<strong>${expr}</strong><br>Not practiced yet`;
+    } else {
+      const accPct = Math.round(acc * 100);
+      const avg = (data.totalMs / data.attempts / 1000).toFixed(1);
+      const recent = data.history.length;
+      tip.innerHTML = `<strong>${expr}</strong><br>Last ${recent} attempts · ${accPct}% correct · ${avg}s avg`;
+    }
+    tip.style.display = 'block';
+    positionTooltip(e);
+    // Auto-hide after 2.5s (useful on mobile where there's no pointerleave)
+    tooltipTimeout = setTimeout(hideTooltip, 2500);
+  }
+
+  function positionTooltip(e) {
+    const tip = document.getElementById('hm-tooltip');
+    // Force layout so offsetWidth/Height are accurate
+    tip.style.left = '0px';
+    tip.style.top = '0px';
+    const tw = tip.offsetWidth || 180;
+    const th = tip.offsetHeight || 60;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const margin = 8;
+    let x = e.clientX + 14;
+    let y = e.clientY - 10;
+    // Clamp right edge
+    if (x + tw > vw - margin) x = e.clientX - tw - 14;
+    // Clamp left edge
+    if (x < margin) x = margin;
+    // Clamp bottom edge
+    if (y + th > vh - margin) y = vh - th - margin;
+    // Clamp top edge
+    if (y < margin) y = margin;
+    tip.style.left = x + 'px';
+    tip.style.top = y + 'px';
+  }
+
+  function hideTooltip() {
+    document.getElementById('hm-tooltip').style.display = 'none';
+  }
+
+  // Tap a cell to immediately drill that fact
+  function drillCell(a, b) {
+    // close heatmap, set op to hmOp, set up that exact question
+    currentOp = hmOp;
+    document.querySelectorAll('.op-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.op === currentOp);
+    });
+    numA = a; numB = b;
+    if (hmOp === '+') correctAnswer = a + b;
+    else if (hmOp === '−') correctAnswer = a - b;
+    else if (hmOp === '×') correctAnswer = a * b;
+    else { correctAnswer = a; numA = a * b; numB = b; } // division: show a*b ÷ b
+    renderQuestion();
+    // scroll back up to the problem
+    document.querySelector('.card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  // Physical keyboard
+  document.addEventListener('keydown', e => {
+    if (answered) return;
+    if (e.key >= '0' && e.key <= '9') numpadPress(e.key);
+    else if (e.key === 'Backspace') numpadDel();
+    else if (e.key === 'Enter') checkAnswer();
+  });
+
+  // Init
+  nextQuestion();
+</script>
+</body>
+</html>
