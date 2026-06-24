@@ -869,6 +869,21 @@ body {
   text-transform: uppercase;
 }
 
+
+/* ── Speed signal ── */
+.speed-signal {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--amber);
+  text-align: center;
+  letter-spacing: 0.04em;
+  min-height: 1em;
+  margin-top: 3px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.speed-signal.visible { opacity: 1; }
+
 /* ── Responsive ── */
 @media (prefers-reduced-motion: reduce) {
   *, .mastery-toast { transition: none !important; }
@@ -937,6 +952,7 @@ body {
     <div class="problem-context" id="problem-context"></div>
     <div class="answer-display empty active" id="answer-display">enter answer</div>
     <div class="feedback-row hidden" id="feedback-row"></div>
+    <div class="speed-signal" id="speed-signal"></div>
   </div>
 
   <div class="numpad" id="numpad">
@@ -1470,6 +1486,7 @@ function nextProblem() {
   answered = false;
   renderEntry();
   setFeedback('', '');
+  clearSpeedSignal();
 }
 
 function generateProblem(tech) {
@@ -1548,9 +1565,23 @@ function genBridging() {
   return { display: `${a} + ${b}`, context: `Bridge through ${nextTen} first.`, answer: a + b, tolerance: null };
 }
 
+
+// ── AUM figure generator — clean below 70% acc, semi-round above ──
+function genAmt(techId, cleanList) {
+  const acc = getAccuracy(techId);
+  if (acc !== null && acc >= 0.70) {
+    // Semi-round: round base + messy offset
+    const bases = [200000, 300000, 400000, 500000, 600000, 700000, 800000, 900000, 1000000, 1200000, 1500000];
+    const base = pick(bases);
+    const offsets = [23000, 37000, 47000, 53000, 63000, 72000, 84000, 91000, 17000, 44000, 58000, 67000, 76000, 83000];
+    return base + pick(offsets);
+  }
+  return pick(cleanList);
+}
+
 // ── Build from 10% ──
 function genPctBuild() {
-  const amts = [120000, 240000, 360000, 480000, 560000, 640000, 800000, 960000, 1200000, 1400000, 1600000, 2000000];
+  const cleanAmts = [120000, 240000, 360000, 480000, 560000, 640000, 800000, 960000, 1200000, 1400000, 1600000, 2000000];
   const pcts = [
     { pct: 5,  label: '5%',  fn: v => v * 0.05 },
     { pct: 15, label: '15%', fn: v => v * 0.15 },
@@ -1564,7 +1595,7 @@ function genPctBuild() {
     { pct: 1.0,  label: '1.00%', fn: v => v * 0.01 },
     { pct: 1.25, label: '1.25%', fn: v => v * 0.0125 },
   ];
-  const amt = pick(amts);
+  const amt = genAmt(currentTechniqueId, cleanAmts);
   const usesFee = Math.random() < 0.4;
   if (usesFee) {
     const rate = pick(feeRates);
@@ -1582,14 +1613,14 @@ function genPctBuild() {
 
 // ── Complement method ──
 function genPctComplement() {
-  const amts = [200000, 320000, 480000, 600000, 750000, 840000, 960000, 1200000];
+  const cleanAmts2 = [200000, 320000, 480000, 600000, 750000, 840000, 960000, 1200000];
+  const amt = genAmt(currentTechniqueId, cleanAmts2);
   const highPcts = [
     { pct: 80, label: '80%', comp: 20 },
     { pct: 85, label: '85%', comp: 15 },
     { pct: 90, label: '90%', comp: 10 },
     { pct: 75, label: '75%', comp: 25 },
   ];
-  const amt = pick(amts);
   const p = pick(highPcts);
   return {
     display: `${p.label} of ${fmtMoney(amt)}`,
@@ -1948,6 +1979,17 @@ function toggleDecimal() {
   if (!currentEntry.includes('.')) { currentEntry += '.'; renderEntry(); }
 }
 
+// Technique-aware speed thresholds (ms)
+const SPEED_THRESHOLDS = {
+  'bonds10': 3000, 'bonds100': 4000,
+  'ltr-add': 6000, 'compensation-add': 6000, 'bridging': 6000,
+  'pct-build': 9000, 'pct-complement': 9000, 'pct-reverse': 9000,
+  'times-table': 3000, 'distributive': 7000, 'doubling-halving': 8000,
+  'div-reverse': 3000, 'div-decomp': 7000, 'rule72': 5000,
+  'estimation-leading': 12000, 'estimation-anchor': 15000,
+  'chain-pct-mul': 18000, 'chain-div-pct': 18000,
+};
+
 function submitAnswer() {
   if (answered) { nextProblem(); return; }
   if (currentEntry === '' || currentEntry === '.') return;
@@ -1977,10 +2019,16 @@ function submitAnswer() {
   const display = document.getElementById('answer-display');
   const suffix = currentProblem.isPercent ? '%' : '';
 
+  // Speed check
+  const elapsed = Date.now() - questionStartTime;
+  const threshold = SPEED_THRESHOLDS[currentTechniqueId] || 8000;
+  const isSlow = elapsed > threshold;
+
   if (isCorrect) {
     sessionCorrect++;
     display.className = 'answer-display correct';
     setFeedback(`✓ Correct — ${exact.toLocaleString()}${suffix}`, 'correct');
+    if (isSlow) showSpeedSignal();
     recordAttempt(currentTechniqueId, true);
   } else if (isClose) {
     display.className = 'answer-display close';
@@ -1988,7 +2036,12 @@ function submitAnswer() {
     recordAttempt(currentTechniqueId, false);
   } else {
     display.className = 'answer-display wrong';
-    setFeedback(`Answer: ${exact.toLocaleString()}${suffix}`, 'wrong');
+    // Chain problems: show two-step breakdown
+    if (currentProblem.layout === 'chain' && currentProblem.anchorLabel) {
+      setFeedback(`Step 1: ${currentProblem.anchorLabel}  →  Step 2: ${exact.toLocaleString()}${suffix}`, 'wrong');
+    } else {
+      setFeedback(`Answer: ${exact.toLocaleString()}${suffix}`, 'wrong');
+    }
     recordAttempt(currentTechniqueId, false);
   }
 
@@ -2010,6 +2063,20 @@ function setFeedback(msg, cls) {
   const el = document.getElementById('feedback-row');
   el.textContent = msg;
   el.className = 'feedback-row ' + (msg ? cls : 'hidden');
+}
+
+function showSpeedSignal() {
+  const el = document.getElementById('speed-signal');
+  if (!el) return;
+  el.textContent = '⚡ Correct — push for speed';
+  el.classList.add('visible');
+}
+
+function clearSpeedSignal() {
+  const el = document.getElementById('speed-signal');
+  if (!el) return;
+  el.textContent = '';
+  el.classList.remove('visible');
 }
 
 function updateSessionStats() {
