@@ -516,13 +516,14 @@ body {
   padding: 10px 14px;
   margin-bottom: 12px;
   font-family: var(--mono);
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   color: var(--amber);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
+  line-height: 1.7;
   display: none;
 }
 .technique-cue.visible { display: block; }
-.technique-cue strong { color: var(--white); }
+.technique-cue strong { color: var(--white); font-weight: 700; }
 
 /* Problem card */
 .problem-card {
@@ -1175,23 +1176,23 @@ const CURRICULUM = [
     techniques: [
       {
         id: 'ch7-t1',
-        name: 'Multi-Step: % then ×',
+        name: 'Multi-Step: % then Multiply',
         desc: 'Find a percentage, then multiply the result. Chain two operations.',
         concept: 'Two-step problems appear constantly in client conversations. Step 1: find the percentage. Anchor on that result and state it. Step 2: multiply or project from that result. Never lose the interim anchor.',
         example: 'Move 20% of $640k to bonds.\nBonds earn 4.5% annually.\nWhat is the annual income?\n\nStep 1: 20% of $640k = $128,000\nStep 2: 4.5% of $128k\n  1% = $1,280 → 4% = $5,120\n  0.5% = $640\n  Total = $5,760',
         type: 'chain-pct-mul',
         estimationTolerance: null,
-        cue: '① Find the percentage first  ② Multiply the result',
+        cue: '<strong>①</strong> Find the percentage first<br><strong>②</strong> Multiply the result',
       },
       {
         id: 'ch7-t2',
-        name: 'Multi-Step: ÷ then %',
+        name: 'Multi-Step: Divide then %',
         desc: 'Divide a total, then apply a percentage to the result.',
         concept: 'Split a figure first, then apply a rate to one of the pieces. Decompose in order. State the interim figure clearly — it is your anchor for the second operation.',
         example: 'Split $840k equally 3 ways.\nEach share earns 0.75% fee.\nWhat is the fee per account?\n\nStep 1: $840k ÷ 3 = $280,000\nStep 2: 0.75% of $280k\n  1% = $2,800 → 0.75% = $2,100\n  Fee per account = $2,100',
         type: 'chain-div-pct',
         estimationTolerance: null,
-        cue: '① Divide the total first  ② Apply the percentage to the result',
+        cue: '<strong>①</strong> Divide the total first<br><strong>②</strong> Apply the percentage to the result',
       },
     ]
   },
@@ -1894,9 +1895,9 @@ function renderProblem(prob) {
         <span class="cs-num">${i+1}</span>
         <span class="cs-text">${step.text}</span>
       </div>`;
-      // Insert anchor connector between step 1 and step 2
+      // Insert anchor connector between step 1 and step 2 — hidden until answer submitted
       if (i === 0 && prob.anchorLabel) {
-        html += `<div class="chain-anchor">
+        html += `<div class="chain-anchor" id="chain-anchor-reveal" style="display:none">
           <span class="ca-arrow">↓</span>
           <span class="ca-value">${prob.anchorLabel}</span>
           <span class="ca-label">Step 1 result — anchor</span>
@@ -1969,6 +1970,9 @@ function submitAnswer() {
 
   answered = true;
   sessionAnswered++;
+  // Reveal chain anchor if present
+  const anchorEl = document.getElementById('chain-anchor-reveal');
+  if (anchorEl) anchorEl.style.display = 'flex';
 
   const display = document.getElementById('answer-display');
   const suffix = currentProblem.isPercent ? '%' : '';
